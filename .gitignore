@@ -1,0 +1,40 @@
+# ─── Config (contains secrets) ───
+config.php
+
+# ─── Uploads (user content) ───
+uploads/products/*
+!uploads/products/.gitkeep
+uploads/*.tmp
+
+# ─── Session & Cache ───
+*.log
+*.cache
+sessions/
+cache/
+
+# ─── OS Files ───
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# ─── IDE / Editor ───
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ─── Node (if used) ───
+node_modules/
+package-lock.json
+
+# ─── Environment ───
+.env
+.env.local
+
+# ─── Internal Notes ───
+memory.md
+task.md
+agents.md
