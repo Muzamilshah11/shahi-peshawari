@@ -377,7 +377,7 @@ function updateProductDOM() {
     var modalTotal = document.getElementById('modalTotal');
     if (modalTotal) modalTotal.textContent = '<?= CURRENCY ?>' + Number(PRODUCT.price * qty).toLocaleString();
 }
-const ALL_PRODUCTS = <?= json_encode($PRODUCTS) ?>;
+let ALL_PRODUCTS = <?= json_encode($PRODUCTS) ?>;
 const BASE = '<?= BASE_URL ?>/';
 const CURRENCY = '<?= CURRENCY ?>';
 let staticProducts = ALL_PRODUCTS.slice();
