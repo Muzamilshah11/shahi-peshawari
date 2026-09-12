@@ -76,7 +76,7 @@ $casualProducts = array_values(array_filter($PRODUCTS, function($p) {
     </div>
 
     <!-- Product Grid -->
-    <div class="product-grid" style="margin-bottom:48px;">
+    <div class="product-grid" id="casualGrid" style="margin-bottom:48px;">
         <?php foreach ($casualProducts as $p):
             $imgs = is_array($p['images']) ? $p['images'] : [$p['images']];
             $src1 = !empty($imgs[0]) ? (str_starts_with($imgs[0], 'http') ? $imgs[0] : BASE_URL . '/' . ltrim($imgs[0], '/')) : '';
@@ -206,6 +206,7 @@ $casualProducts = array_values(array_filter($PRODUCTS, function($p) {
 
 <script>
 const BASE = '<?= BASE_URL ?>/';
+const PLACEHOLDER = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" fill="#e0e0e0"><rect width="300" height="300"/><text x="150" y="160" font-family="sans-serif" font-size="14" fill="#999" text-anchor="middle">No Image</text></svg>');
 
 document.addEventListener('mouseenter', function(e) {
     var card = e.target.closest('.product-card');
@@ -397,6 +398,43 @@ function confirmQuickBuy() {
             btn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Order';
             showToast('Error. Try again.');
         });
+}
+
+/* ─── Firebase Real-time Sync ─── */
+var catKey = 'casual';
+var gridId = 'casualGrid';
+if (typeof db !== 'undefined') {
+    db.ref('products').on('value', function(snap) {
+        try {
+            var fbProducts = snap.val();
+            if (!fbProducts || typeof fbProducts !== 'object') return;
+            var grid = document.getElementById(gridId);
+            if (!grid) return;
+            var html = '';
+            Object.keys(fbProducts).forEach(function(id) {
+                var raw = fbProducts[id];
+                if (raw.cat !== catKey || !raw.name || !raw.price) return;
+                var imgs = raw.images || [];
+                if (imgs && typeof imgs === 'object' && !Array.isArray(imgs)) imgs = Object.values(imgs);
+                var src1 = imgs[0] || '';
+                var src2 = imgs[1] || src1;
+                var rating = raw.rating || 0;
+                var stars = '';
+                for (var s = 1; s <= 5; s++) stars += '<i class="fas fa-star" style="font-size:.65rem;color:' + (s <= rating ? '#f59e0b' : '#d1d5db') + '"></i>';
+                var safeName = (raw.name || '').replace(/"/g, '&quot;');
+                html += '<div class="product-card" data-id="' + id + '" data-name="' + safeName + '" data-cat="casual" style="position:relative;">'
+                    + '<div class="img-wrap"><img src="' + BASE + src1.replace(/^\//,'') + '" alt="' + safeName + '" loading="lazy" onerror="this.onerror=null;this.src=\'' + PLACEHOLDER + '\'">'
+                    + '<button class="heart-btn" data-id="' + id + '" data-name="' + safeName + '" data-price="' + raw.price + '" data-img="' + BASE + src1.replace(/^\//,'') + '" title="Add to Cart"><i class="fas fa-heart"></i></button></div>'
+                    + '<div class="card-body"><span class="card-cat">casual</span><h3 class="card-title">' + safeName + '</h3><div style="margin:3px 0">' + stars + '</div>'
+                    + '<p style="font-size:.72rem;color:var(--grey-text);margin:4px 0 6px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">' + (raw.shortDetail || '') + '</p>'
+                    + '<div class="card-price">Rs.' + Number(raw.price).toLocaleString()
+                    + (raw.oldPrice ? ' <span class="old-price">Rs.' + Number(raw.oldPrice).toLocaleString() + '</span>' : '') + '</div>'
+                    + '<button class="btn-buy-card" data-id="' + id + '" data-name="' + safeName + '" data-price="' + raw.price + '" data-imgs="' + BASE + src1.replace(/^\//,'') + '|' + BASE + src2.replace(/^\//,'') + '"><i class="fas fa-bolt"></i> Buy Now</button>'
+                    + '</div></div>';
+            });
+            if (html) grid.innerHTML = html;
+        } catch(err) { console.error('Firebase error:', err); }
+    });
 }
 </script>
 
