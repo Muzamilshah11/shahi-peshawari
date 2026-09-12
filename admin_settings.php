@@ -110,6 +110,15 @@ require_once 'admin_sidebar.php';
                        style="width:100%; padding:12px 14px; border:1px solid var(--admin-border); border-radius:8px; font-size:.9rem;">
             </div>
 
+            <div style="margin-bottom:20px; padding:16px; background:#f0f9ff; border-radius:10px; border:1px solid #bfdbfe;">
+                <label style="display:block; font-size:.8rem; font-weight:600; color:var(--admin-grey); margin-bottom:6px;">
+                    <i class="fab fa-facebook" style="color:#1877f2;"></i> Facebook Pixel ID
+                </label>
+                <input type="text" id="fbPixelId" placeholder="e.g. 1234567890123456"
+                       style="width:100%; padding:12px 14px; border:1px solid var(--admin-border); border-radius:8px; font-size:.9rem;">
+                <p style="font-size:.72rem; color:#6b7280; margin-top:6px;">Sirf numbers paste karo. Facebook Events Manager se milta hai.</p>
+            </div>
+
             <button onclick="saveStoreInfo()" id="saveStoreBtn"
                     style="width:100%; padding:12px; background:var(--admin-black); color:#fff; border-radius:8px; font-size:.9rem; font-weight:600; transition:all .2s;">
                 Save Store Info
@@ -212,6 +221,7 @@ function loadSettings() {
         document.getElementById('storeEmail').value = s.storeEmail || '';
         document.getElementById('storeAddress').value = s.storeAddress || '';
         document.getElementById('deliveryFee').value = s.deliveryFee || '';
+        document.getElementById('fbPixelId').value = s.fbPixelId || '';
 
         updatePreview(s.waNumber, s.waPreFilled);
     });
@@ -269,7 +279,8 @@ function saveStoreInfo() {
         storePhone: document.getElementById('storePhone').value.trim(),
         storeEmail: document.getElementById('storeEmail').value.trim(),
         storeAddress: document.getElementById('storeAddress').value.trim(),
-        deliveryFee: Number(document.getElementById('deliveryFee').value) || 150
+        deliveryFee: Number(document.getElementById('deliveryFee').value) || 150,
+        fbPixelId: document.getElementById('fbPixelId').value.trim().replace(/[^0-9]/g, '')
     }).then(() => {
         showStatus(status, 'Store info saved!', true);
         btn.textContent = 'Save Store Info';
