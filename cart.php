@@ -45,8 +45,12 @@ require_once 'header.php';
                             <input type="email" id="cEmail" placeholder="your@email.com">
                         </div>
                         <div class="form-group">
-                            <label>Address (auto-filled, editable)</label>
-                            <input type="text" id="cAddress" placeholder="Delivery address">
+                            <label><i class="fas fa-map-marker-alt" style="color:var(--blue)"></i> Address</label>
+                            <div style="display:flex;gap:8px;align-items:center;">
+                                <input type="text" id="cAddress" placeholder="Tap button to detect or type manually" style="flex:1">
+                                <button type="button" onclick="detectLocation('cAddress','cCity',this)" style="padding:10px 14px;border:2px solid var(--blue);border-radius:10px;background:var(--blue);color:#fff;cursor:pointer;white-space:nowrap;font-size:.85rem;display:flex;align-items:center;gap:6px;" title="Detect my location"><i class="fas fa-crosshairs"></i> <span>Detect</span></button>
+                                <button type="button" onclick="openMapPicker('cAddress','cCity')" style="padding:10px 14px;border:2px solid var(--blue);border-radius:10px;background:#fff;color:var(--blue);cursor:pointer;white-space:nowrap;font-size:.85rem;display:flex;align-items:center;gap:6px;" title="Pick on map"><i class="fas fa-map"></i> <span>Map</span></button>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>City / State</label>
@@ -222,16 +226,69 @@ function initMap() {
 }
 
 function reverseGeo(lat, lng) {
-    fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`)
-        .then(r => r.json())
-        .then(data => {
-            const city = data.city || data.locality || '';
-            const state = data.principalSubdivision || '';
-            const addr = data.localityInfo?.formatted?.[0] || data.street || '';
-            document.getElementById('cAddress').value = addr;
-            document.getElementById('cCity').value = [city, state].filter(Boolean).join(', ');
+    /* bigdatacloud primary — better for Pakistan */
+    fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' + lat + '&longitude=' + lng + '&localityLanguage=en')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        var addr = d.localityInfo?.formatted || [];
+        var street = d.street || '';
+        var city = d.city || d.locality || '';
+        var state = d.principalSubdivision || '';
+
+        var goodParts = [];
+        for (var i = 0; i < addr.length; i++) {
+            var part = addr[i];
+            if (!part) continue;
+            if (/^[A-Z]?\d{1,2}[A-Z]?$/.test(part.trim())) continue;
+            if (/^\d+$/.test(part.trim())) continue;
+            goodParts.push(part);
+        }
+
+        if (street) {
+            if (/^[A-Z]?\d{1,2}[A-Z]?$/.test(street.trim()) || /^\d+$/.test(street.trim())) {
+                document.getElementById('cAddress').value = goodParts.slice(0, 3).join(', ') || d.display_name || '';
+            } else {
+                document.getElementById('cAddress').value = street + (goodParts.length ? ', ' + goodParts.slice(0, 2).join(', ') : '');
+            }
+        } else {
+            document.getElementById('cAddress').value = goodParts.slice(0, 3).join(', ') || d.display_name || '';
+        }
+
+        if (city && city.length > 2) {
+            document.getElementById('cCity').value = state ? city + ', ' + state : city;
+        } else {
+            document.getElementById('cCity').value = state || 'Peshawar';
+        }
+    })
+    .catch(function() {
+        /* Nominatim fallback */
+        fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1&accept-language=en', {
+            headers: { 'Accept': 'application/json' }
         })
-        .catch(() => {});
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data && data.address) {
+                var a = data.address;
+                var parts = [a.house_number, a.road, a.pedestrian, a.footway,
+                    a.neighbourhood, a.suburb, a.residential, a.commercial,
+                    a.quarter, a.hamlet, a.plot, a.village, a.town, a.city_district, a.county].filter(Boolean);
+                var cleanParts = [];
+                for (var i = 0; i < parts.length; i++) {
+                    if (!/^[A-Z]?\d{1,2}[A-Z]?$/.test(parts[i].trim())) cleanParts.push(parts[i]);
+                }
+                document.getElementById('cAddress').value = cleanParts.slice(0, 3).join(', ') || data.display_name || '';
+                var cp = [a.city || a.town || a.village, a.state].filter(Boolean);
+                document.getElementById('cCity').value = cp.join(', ') || '';
+            } else {
+                document.getElementById('cAddress').value = data.display_name || '';
+                document.getElementById('cCity').value = '';
+            }
+        })
+        .catch(function() {
+            document.getElementById('cAddress').value = '';
+            document.getElementById('cCity').value = '';
+        });
+    });
 }
 
 /* ─── Place Order ─── */
