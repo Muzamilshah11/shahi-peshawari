@@ -294,8 +294,8 @@ require_once 'header.php';
 const PRODUCT_STATIC = <?= json_encode($product) ?>;
 let PRODUCT = PRODUCT_STATIC;
 
-/* Load from Firebase (override static if available) */
-db.ref('products/' + PRODUCT_STATIC.id).once('value', snap => {
+/* Load from Firebase (real-time override) */
+db.ref('products/' + PRODUCT_STATIC.id).on('value', snap => {
     const fb = snap.val();
     if (fb) {
         PRODUCT = {
@@ -309,8 +309,11 @@ db.ref('products/' + PRODUCT_STATIC.id).once('value', snap => {
             images: fb.images && fb.images.length ? fb.images : PRODUCT_STATIC.images,
             shortDetail: fb.shortDetail || PRODUCT_STATIC.shortDetail
         };
-        /* Update DOM with Firebase data */
+        /* Update ALL_PRODUCTS entry too so Similar Products reflects latest */
+        var idx = ALL_PRODUCTS.findIndex(function(x){ return x.id === PRODUCT_STATIC.id; });
+        if (idx >= 0) ALL_PRODUCTS[idx] = Object.assign({}, ALL_PRODUCTS[idx], PRODUCT);
         updateProductDOM();
+        renderSimilar();
     }
 });
 
@@ -531,31 +534,37 @@ function confirmOrder() {
 }
 
 /* ─── Similar Products ─── */
-(function() {
-    const similar = ALL_PRODUCTS.filter(p => p.cat === PRODUCT.cat && p.id !== PRODUCT.id).slice(0, 4);
-    const section = document.querySelector('.pd-similar');
-    if (similar.length === 0) {
-        if (section) section.style.display = 'none';
-        return;
-    }
-    const placeholder = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" fill="%23e0e0e0"><rect width="300" height="300"/><text x="150" y="160" font-family="sans-serif" font-size="14" fill="%23999" text-anchor="middle">No Image</text></svg>');
-    document.getElementById('similarGrid').innerHTML = similar.map(p => {
+function renderSimilar() {
+    var grid = document.getElementById('similarGrid');
+    var section = document.querySelector('.pd-similar');
+    if (!grid || !section) return;
+    var similar = ALL_PRODUCTS.filter(function(p) { return p.cat === PRODUCT.cat && p.id !== PRODUCT.id; }).slice(0, 4);
+    if (similar.length === 0) { section.style.display = 'none'; return; }
+    section.style.display = '';
+    var placeholder = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" fill="%23e0e0e0"><rect width="300" height="300"/><text x="150" y="160" font-family="sans-serif" font-size="14" fill="%23999" text-anchor="middle">No Image</text></svg>');
+    grid.innerHTML = similar.map(function(p) {
         var imgs = p.images || [];
         if (imgs && typeof imgs === 'object' && !Array.isArray(imgs)) imgs = Object.values(imgs);
         var src = (imgs[0] && imgs[0].startsWith('http')) ? imgs[0] : (imgs[0] ? BASE + imgs[0].replace(/^\//, '') : placeholder);
+        var safeName = (p.name || '').replace(/"/g, '&quot;');
+        var rating = p.rating || 0;
+        var stars = '';
+        for (var s = 1; s <= 5; s++) stars += '<i class="fas fa-star" style="font-size:.65rem;color:' + (s <= rating ? '#f59e0b' : '#d1d5db') + '"></i>';
         return '<div class="product-card" onclick="window.location.href=\'product.php?id=' + p.id + '\'" style="cursor:pointer">'
             + '<div class="img-wrap" style="position:relative">'
-            + '<img src="' + src + '" alt="' + p.name + '" loading="lazy" onerror="this.onerror=null;this.src=\'' + placeholder + '\'">'
-            + '<button class="heart-btn" data-id="' + p.id + '" data-name="' + (p.name||'').replace(/"/g,'&quot;') + '" data-price="' + p.price + '" data-img="' + src + '" title="Add to Cart"><i class="fas fa-heart"></i></button>'
+            + '<img src="' + src + '" alt="' + safeName + '" loading="lazy" onerror="this.onerror=null;this.src=\'' + placeholder + '\'">'
+            + '<button class="heart-btn" data-id="' + p.id + '" data-name="' + safeName + '" data-price="' + p.price + '" data-img="' + src + '" title="Add to Cart"><i class="fas fa-heart"></i></button>'
             + '</div>'
             + '<div class="card-body">'
             + '<span class="card-cat">' + p.cat + '</span>'
-            + '<h3 class="card-title">' + p.name + '</h3>'
-            + '<div class="card-price">' + CURRENCY + p.price.toLocaleString()
-            + (p.oldPrice ? ' <span class="old-price">' + CURRENCY + p.oldPrice.toLocaleString() + '</span>' : '')
+            + '<h3 class="card-title">' + safeName + '</h3>'
+            + '<div style="margin:3px 0">' + stars + '</div>'
+            + '<div class="card-price">' + CURRENCY + Number(p.price).toLocaleString()
+            + (p.oldPrice ? ' <span class="old-price">' + CURRENCY + Number(p.oldPrice).toLocaleString() + '</span>' : '')
             + '</div></div></div>';
     }).join('');
-})();
+}
+renderSimilar();
 </script>
 
 <?php require_once 'footer.php'; ?>
