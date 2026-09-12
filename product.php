@@ -380,6 +380,7 @@ function updateProductDOM() {
 const ALL_PRODUCTS = <?= json_encode($PRODUCTS) ?>;
 const BASE = '<?= BASE_URL ?>/';
 const CURRENCY = '<?= CURRENCY ?>';
+let staticProducts = ALL_PRODUCTS.slice();
 
 /* ─── Image Gallery ─── */
 function changeImg(src, btn) {
@@ -565,6 +566,36 @@ function renderSimilar() {
     }).join('');
 }
 renderSimilar();
+
+/* ─── Firebase ALL Products Sync for Similar Products ─── */
+if (typeof db !== 'undefined') {
+    db.ref('products').on('value', function(snap) {
+        try {
+            var fbProducts = snap.val();
+            if (fbProducts && typeof fbProducts === 'object') {
+                var loaded = Object.keys(fbProducts).map(function(id) {
+                    var raw = fbProducts[id];
+                    var imgs = raw.images || [];
+                    if (imgs && typeof imgs === 'object' && !Array.isArray(imgs)) imgs = Object.values(imgs);
+                    return {
+                        id: id, name: raw.name || '', cat: raw.cat || 'classic',
+                        price: raw.price || 0, oldPrice: raw.oldPrice || 0,
+                        stock: raw.stock !== undefined ? raw.stock : 999,
+                        rating: raw.rating || 0,
+                        images: imgs, shortDetail: raw.shortDetail || ''
+                    };
+                }).filter(function(p) { return p.name && p.price > 0; });
+                if (loaded.length > 0) {
+                    var mergedMap = {};
+                    staticProducts.forEach(function(p) { mergedMap[p.id] = p; });
+                    loaded.forEach(function(p) { mergedMap[p.id] = p; });
+                    ALL_PRODUCTS = Object.values(mergedMap);
+                    renderSimilar();
+                }
+            }
+        } catch(err) { console.error('Firebase sync error:', err); }
+    });
+}
 </script>
 
 <?php require_once 'footer.php'; ?>
