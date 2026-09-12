@@ -47,8 +47,7 @@ require_once 'header.php';
                         <div class="form-group">
                             <label><i class="fas fa-map-marker-alt" style="color:var(--blue)"></i> Address</label>
                             <div style="display:flex;gap:8px;align-items:center;">
-                                <input type="text" id="cAddress" placeholder="Enter address or tap Map" style="flex:1">
-                                <button type="button" onclick="openMapPicker('cAddress','cCity')" style="padding:10px 14px;border:2px solid var(--blue);border-radius:10px;background:var(--blue);color:#fff;cursor:pointer;white-space:nowrap;font-size:.85rem;display:flex;align-items:center;gap:6px;" title="Pick on map"><i class="fas fa-map"></i> <span>Map</span></button>
+                                <input type="text" id="cAddress" placeholder="Enter delivery address" style="flex:1">
                             </div>
                         </div>
                         <div class="form-group">

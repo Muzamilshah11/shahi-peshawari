@@ -223,8 +223,7 @@ require_once 'header.php';
                 <div class="form-group">
                     <label><i class="fas fa-map-marker-alt" style="color:var(--blue)"></i> Delivery Address</label>
                     <div style="display:flex;gap:8px;align-items:center;">
-                        <input type="text" id="oAddress" placeholder="Enter address or tap Map" style="flex:1">
-                        <button type="button" onclick="openMapPicker('oAddress','oCity')" style="padding:10px 14px;border:2px solid var(--blue);border-radius:10px;background:var(--blue);color:#fff;cursor:pointer;white-space:nowrap;font-size:.85rem;display:flex;align-items:center;gap:6px;" title="Pick on map"><i class="fas fa-map"></i> <span>Map</span></button>
+                        <input type="text" id="oAddress" placeholder="Enter delivery address" style="flex:1">
                     </div>
                 </div>
                 <div class="form-row">
@@ -289,7 +288,8 @@ require_once 'header.php';
 <!-- Map (hidden, for geolocation) -->
 <div id="map" style="display:none"></div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- removed Leaflet JS (no longer needed) -->
+
 <script>
 const PRODUCT_STATIC = <?= json_encode($product) ?>;
 let PRODUCT = PRODUCT_STATIC;
@@ -305,11 +305,75 @@ db.ref('products/' + PRODUCT_STATIC.id).once('value', snap => {
             price: fb.price || PRODUCT_STATIC.price,
             oldPrice: fb.oldPrice || PRODUCT_STATIC.oldPrice,
             stock: fb.stock !== undefined ? fb.stock : 999,
+            rating: fb.rating || 0,
             images: fb.images && fb.images.length ? fb.images : PRODUCT_STATIC.images,
             shortDetail: fb.shortDetail || PRODUCT_STATIC.shortDetail
         };
+        /* Update DOM with Firebase data */
+        updateProductDOM();
     }
 });
+
+function updateProductDOM() {
+    if (!PRODUCT) return;
+    /* Title */
+    var titleEl = document.querySelector('.pd-title');
+    if (titleEl) titleEl.textContent = PRODUCT.name;
+    document.title = PRODUCT.name + ' | <?= SITE_NAME ?>';
+    /* Price */
+    var priceEl = document.querySelector('.pd-price');
+    if (priceEl) {
+        var priceHTML = '<?= CURRENCY ?>' + Number(PRODUCT.price).toLocaleString();
+        if (PRODUCT.oldPrice && PRODUCT.oldPrice > PRODUCT.price) {
+            var disc = Math.round((1 - PRODUCT.price / PRODUCT.oldPrice) * 100);
+            priceHTML += ' <span class="pd-old-price"><?= CURRENCY ?>' + Number(PRODUCT.oldPrice).toLocaleString() + '</span>';
+            priceHTML += ' <span class="pd-discount">-' + disc + '%</span>';
+        }
+        priceEl.innerHTML = priceHTML;
+    }
+    /* Description */
+    var descEl = document.querySelector('.pd-desc p');
+    if (descEl) descEl.textContent = PRODUCT.shortDetail;
+    /* Category */
+    var catEl = document.querySelector('.pd-cat');
+    if (catEl) catEl.textContent = PRODUCT.cat.charAt(0).toUpperCase() + PRODUCT.cat.slice(1) + ' Collection';
+    /* Main image */
+    var mainImg = document.getElementById('pdMainImgTag');
+    if (mainImg && PRODUCT.images && PRODUCT.images[0]) {
+        mainImg.src = '<?= BASE_URL ?>/' + PRODUCT.images[0].replace(/^\//, '');
+    }
+    /* Thumbnails */
+    var thumbsContainer = document.querySelector('.pd-thumbs');
+    if (thumbsContainer && PRODUCT.images && PRODUCT.images.length > 1) {
+        thumbsContainer.innerHTML = PRODUCT.images.map(function(img, i) {
+            return '<button class="pd-thumb ' + (i === 0 ? 'active' : '') + '" onclick="changeImg(\'<?= BASE_URL ?>/' + img.replace(/^\//, '') + '\', this)"><img src="<?= BASE_URL ?>/' + img.replace(/^\//, '') + '" alt="View ' + (i+1) + '" onerror="this.onerror=null;this.style.display=\'none\'"></button>';
+        }).join('');
+    }
+    /* Rating */
+    var starsEl = document.querySelector('.pd-rating .stars');
+    if (starsEl && PRODUCT.rating) {
+        var rating = Number(PRODUCT.rating);
+        var starsHTML = '';
+        for (var s = 1; s <= 5; s++) {
+            starsHTML += '<i class="fas fa-star" style="color:' + (s <= rating ? '#f59e0b' : '#d1d5db') + '"></i>';
+        }
+        starsEl.innerHTML = starsHTML;
+        var ratingText = document.querySelector('.rating-text');
+        if (ratingText) ratingText.textContent = rating > 0 ? rating + '.0' : 'No rating';
+    }
+    /* Modal thumb + name + price */
+    var modalThumb = document.querySelector('.modal-thumb');
+    if (modalThumb && PRODUCT.images && PRODUCT.images[0]) modalThumb.src = '<?= BASE_URL ?>/' + PRODUCT.images[0].replace(/^\//, '');
+    var modalName = document.querySelector('.modal-pname');
+    if (modalName) modalName.textContent = PRODUCT.name;
+    var modalPrice = document.querySelector('.modal-pprice');
+    if (modalPrice) modalPrice.innerHTML = '<?= CURRENCY ?>' + Number(PRODUCT.price).toLocaleString() + ' x <span id="modalQty">1</span>';
+    /* Update stock display */
+    updateStockDisplay();
+    /* Update modal total */
+    var modalTotal = document.getElementById('modalTotal');
+    if (modalTotal) modalTotal.textContent = '<?= CURRENCY ?>' + Number(PRODUCT.price * qty).toLocaleString();
+}
 const ALL_PRODUCTS = <?= json_encode($PRODUCTS) ?>;
 const BASE = '<?= BASE_URL ?>/';
 const CURRENCY = '<?= CURRENCY ?>';
@@ -398,7 +462,7 @@ document.getElementById('buyModal').addEventListener('click', function(e) {
     }
 });
 
-/* ─── User picks location via Map button ─── */
+/* Address field — user types manually */
 
 /* ─── Confirm Order ─── */
 function confirmOrder() {

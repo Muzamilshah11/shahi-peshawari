@@ -157,8 +157,7 @@ $modernProducts = array_values(array_filter($PRODUCTS, function($p) {
                 <div class="form-group"><label>Email (optional)</label><input type="email" id="qbOEmail" placeholder="your@email.com"></div>
                 <div class="form-group"><label><i class="fas fa-map-marker-alt" style="color:var(--blue)"></i> Address</label>
                     <div style="display:flex;gap:8px;align-items:center;">
-                        <input type="text" id="qbAddress" placeholder="Enter address or tap Map" style="flex:1">
-                        <button type="button" onclick="openMapPicker('qbAddress','qbCity')" style="padding:10px 14px;border:2px solid var(--blue);border-radius:10px;background:var(--blue);color:#fff;cursor:pointer;white-space:nowrap;font-size:.85rem;display:flex;align-items:center;gap:6px;" title="Pick on map"><i class="fas fa-map"></i> <span>Map</span></button>
+                        <input type="text" id="qbAddress" placeholder="Enter delivery address" style="flex:1">
                     </div>
                 </div>
                 <div class="form-row">
@@ -286,7 +285,7 @@ function openQuickBuy(id, name, price, images) {
     document.getElementById('quickBuyModal').classList.add('show');
     document.body.style.overflow = 'hidden';
 
-    /* User picks location via Map button */
+    /* Address field — user types manually */
 }
 
 function qbSlide(dir) {
