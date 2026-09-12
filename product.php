@@ -24,8 +24,15 @@ require_once 'header.php';
         <span><?= htmlspecialchars($product['name']) ?></span>
     </div>
 
-    <!-- Product Detail -->
-    <div class="pd-grid">
+    <!-- Loading Overlay -->
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+    <div id="pdLoader" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;gap:16px;">
+        <div style="width:48px;height:48px;border:4px solid #e0e0e0;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;"></div>
+        <p style="color:var(--grey-text);font-size:.9rem;">Loading product...</p>
+    </div>
+
+    <!-- Product Detail (hidden until Firebase loads) -->
+    <div class="pd-grid" id="pdGrid" style="display:none;">
 
         <!-- Left: Images -->
         <div class="pd-images">
@@ -293,6 +300,27 @@ require_once 'header.php';
 <script>
 const PRODUCT_STATIC = <?= json_encode($product) ?>;
 let PRODUCT = PRODUCT_STATIC;
+let productLoaded = false;
+
+/* Show product, hide loader */
+function showProduct() {
+    if (productLoaded) return;
+    productLoaded = true;
+    var loader = document.getElementById('pdLoader');
+    var grid = document.getElementById('pdGrid');
+    if (loader) loader.style.display = 'none';
+    if (grid) grid.style.display = '';
+}
+
+/* Fallback: show static data if Firebase doesn't respond in 3s */
+setTimeout(function() {
+    if (!productLoaded) {
+        PRODUCT = PRODUCT_STATIC;
+        updateProductDOM();
+        renderSimilar();
+        showProduct();
+    }
+}, 3000);
 
 /* Load from Firebase (real-time override) */
 db.ref('products/' + PRODUCT_STATIC.id).on('value', snap => {
@@ -309,11 +337,11 @@ db.ref('products/' + PRODUCT_STATIC.id).on('value', snap => {
             images: fb.images && fb.images.length ? fb.images : PRODUCT_STATIC.images,
             shortDetail: fb.shortDetail || PRODUCT_STATIC.shortDetail
         };
-        /* Update ALL_PRODUCTS entry too so Similar Products reflects latest */
         var idx = ALL_PRODUCTS.findIndex(function(x){ return x.id === PRODUCT_STATIC.id; });
         if (idx >= 0) ALL_PRODUCTS[idx] = Object.assign({}, ALL_PRODUCTS[idx], PRODUCT);
         updateProductDOM();
         renderSimilar();
+        showProduct();
     }
 });
 
