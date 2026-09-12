@@ -21,8 +21,8 @@ require_once 'header.php';
                 <!-- Map -->
                 <h2 class="section-title"><i class="fas fa-map-marker-alt"></i> Delivery Location</h2>
                 <p style="font-size:.8rem;color:var(--grey-text);margin-bottom:8px;">
-                    <i class="fas fa-crosshairs" style="color:var(--blue)"></i>
-                    Detecting your location...
+                    <i class="fas fa-map-pin" style="color:var(--blue)"></i>
+                    Click on map to set delivery location
                 </p>
                 <div id="map"></div>
 
@@ -47,9 +47,8 @@ require_once 'header.php';
                         <div class="form-group">
                             <label><i class="fas fa-map-marker-alt" style="color:var(--blue)"></i> Address</label>
                             <div style="display:flex;gap:8px;align-items:center;">
-                                <input type="text" id="cAddress" placeholder="Tap button to detect or type manually" style="flex:1">
-                                <button type="button" onclick="detectLocation('cAddress','cCity',this)" style="padding:10px 14px;border:2px solid var(--blue);border-radius:10px;background:var(--blue);color:#fff;cursor:pointer;white-space:nowrap;font-size:.85rem;display:flex;align-items:center;gap:6px;" title="Detect my location"><i class="fas fa-crosshairs"></i> <span>Detect</span></button>
-                                <button type="button" onclick="openMapPicker('cAddress','cCity')" style="padding:10px 14px;border:2px solid var(--blue);border-radius:10px;background:#fff;color:var(--blue);cursor:pointer;white-space:nowrap;font-size:.85rem;display:flex;align-items:center;gap:6px;" title="Pick on map"><i class="fas fa-map"></i> <span>Map</span></button>
+                                <input type="text" id="cAddress" placeholder="Enter address or tap Map" style="flex:1">
+                                <button type="button" onclick="openMapPicker('cAddress','cCity')" style="padding:10px 14px;border:2px solid var(--blue);border-radius:10px;background:var(--blue);color:#fff;cursor:pointer;white-space:nowrap;font-size:.85rem;display:flex;align-items:center;gap:6px;" title="Pick on map"><i class="fas fa-map"></i> <span>Map</span></button>
                             </div>
                         </div>
                         <div class="form-group">
@@ -208,21 +207,7 @@ function initMap() {
         reverseGeo(e.latlng.lat, e.latlng.lng);
     });
 
-    /* Auto-detect geolocation */
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            pos => {
-                userLat = pos.coords.latitude;
-                userLng = pos.coords.longitude;
-                map.setView([userLat, userLng], 14);
-                marker.setLatLng([userLat, userLng]);
-                reverseGeo(userLat, userLng);
-            },
-            () => { reverseGeo(userLat, userLng); }
-        );
-    } else {
-        reverseGeo(userLat, userLng);
-    }
+    /* Map ready — user picks location by clicking */
 }
 
 function reverseGeo(lat, lng) {

@@ -223,9 +223,8 @@ require_once 'header.php';
                 <div class="form-group">
                     <label><i class="fas fa-map-marker-alt" style="color:var(--blue)"></i> Delivery Address</label>
                     <div style="display:flex;gap:8px;align-items:center;">
-                        <input type="text" id="oAddress" placeholder="Tap button to detect or type manually" style="flex:1">
-                        <button type="button" onclick="detectLocation('oAddress','oCity',this)" style="padding:10px 14px;border:2px solid var(--blue);border-radius:10px;background:var(--blue);color:#fff;cursor:pointer;white-space:nowrap;font-size:.85rem;display:flex;align-items:center;gap:6px;" title="Detect my location"><i class="fas fa-crosshairs"></i> <span>Detect</span></button>
-                        <button type="button" onclick="openMapPicker('oAddress','oCity')" style="padding:10px 14px;border:2px solid var(--blue);border-radius:10px;background:#fff;color:var(--blue);cursor:pointer;white-space:nowrap;font-size:.85rem;display:flex;align-items:center;gap:6px;" title="Pick on map"><i class="fas fa-map"></i> <span>Map</span></button>
+                        <input type="text" id="oAddress" placeholder="Enter address or tap Map" style="flex:1">
+                        <button type="button" onclick="openMapPicker('oAddress','oCity')" style="padding:10px 14px;border:2px solid var(--blue);border-radius:10px;background:var(--blue);color:#fff;cursor:pointer;white-space:nowrap;font-size:.85rem;display:flex;align-items:center;gap:6px;" title="Pick on map"><i class="fas fa-map"></i> <span>Map</span></button>
                     </div>
                 </div>
                 <div class="form-row">
@@ -399,8 +398,7 @@ document.getElementById('buyModal').addEventListener('click', function(e) {
     }
 });
 
-/* ─── Geolocation (auto-detect on modal open) ─── */
-setTimeout(function() { detectLocation('oAddress', 'oCity', null); }, 300);
+/* ─── User picks location via Map button ─── */
 
 /* ─── Confirm Order ─── */
 function confirmOrder() {
